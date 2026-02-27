@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 posa gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-stone-100 to-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="text-center mb-12 animate-in slide-in-from-top duration-500">
+            <h1 class="text-5xl md:text-4xl sm:text-3xl font-bold text-gray-800 mb-2">
+                🐱 mga posaaaaa
+            </h1>
+            <p class="text-lg text-gray-600">
+                Organize photos by your adorable cats!
+            </p>
+        </header>
+
+        <!-- Cat Management Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 md:p-6 mb-8 animate-in slide-in-from-top duration-500 delay-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">My Cats</h2>
+            
+            <!-- Add New Cat -->
+            <div class="flex gap-3 mb-6">
+                <input 
+                    type="text" 
+                    id="newCatInput" 
+                    placeholder="Enter cat name..." 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-700"
+                >
+                <button 
+                    id="addCatBtn" 
+                    class="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg font-semibold transition-colors"
+                >
+                    + Add Cat
+                </button>
+            </div>
+
+            <!-- Cat List -->
+            <div id="catList" class="flex flex-wrap gap-3"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 md:p-6 mb-12 animate-in zoom-in duration-500 delay-200">
+            <label class="block mb-4 text-gray-700 font-semibold text-lg">
+                Upload Photos for <span id="currentCatDisplay" class="text-gray-900 font-bold">Select a Cat</span>
+            </label>
+            <div class="relative">
+                <input 
+                    type="file" 
+                    id="fileInput" 
+                    accept="image/*" 
+                    multiple
+                    class="sr-only"
+                >
+                <label 
+                    for="fileInput" 
+                    class="flex items-center justify-center gap-3 px-6 py-6 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg cursor-pointer font-semibold transition-transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    id="fileInputLabel"
+                >
+                    <span class="text-2xl">📸</span>
+                    <span>Click to select images</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-in fade-in duration-600 delay-400"></div>
+
+        <div id="emptyState" class="text-center py-24 text-gray-500">
+            <div class="text-6xl mb-6">🐱</div>
+            <p class="text-xl" id="emptyStateText">Select or create a cat to get started!</p>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-[90vh] w-full">
+            <button class="modal-close absolute top-4 right-4 bg-black/70 hover:bg-black/90 text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl transition-colors">
+                ×
+            </button>
+            <img id="modalImage" src="" alt="Full size cat photo" class="w-full h-auto rounded-lg">
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const gallery = document.getElementById('gallery');
+        const emptyState = document.getElementById('emptyState');
+        const emptyStateText = document.getElementById('emptyStateText');
+        const catList = document.getElementById('catList');
+        const newCatInput = document.getElementById('newCatInput');
+        const addCatBtn = document.getElementById('addCatBtn');
+        const currentCatDisplay = document.getElementById('currentCatDisplay');
+        const fileInputLabel = document.getElementById('fileInputLabel');
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modalImage');
+        const modalClose = document.querySelector('.modal-close');
+
+        let currentCat = null;
+
+        // Initialize data structure
+        function initializeStorage() {
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            if (Object.keys(data).length === 0) {
+                localStorage.setItem('catsData', JSON.stringify({}));
+            }
+            return data;
+        }
+
+        // Get all cats
+        function getAllCats() {
+            return Object.keys(JSON.parse(localStorage.getItem('catsData') || '{}'));
+        }
+
+        // Set current cat
+        function setCurrentCat(catName) {
+            currentCat = catName;
+            localStorage.setItem('currentCat', catName);
+            currentCatDisplay.textContent = catName;
+            fileInput.disabled = false;
+            fileInputLabel.style.pointerEvents = 'auto';
+            fileInputLabel.style.opacity = '1';
+            loadGallery();
+            renderCatList();
+        }
+
+        // Add new cat
+        function addCat() {
+            const catName = newCatInput.value.trim();
+            
+            if (!catName) {
+                alert('Please enter a cat name');
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            
+            if (data[catName]) {
+                alert('A cat with this name already exists!');
+                return;
+            }
+
+            data[catName] = [];
+            localStorage.setItem('catsData', JSON.stringify(data));
+            newCatInput.value = '';
+
+            if (!currentCat) {
+                setCurrentCat(catName);
+            } else {
+                renderCatList();
+            }
+        }
+
+        // Delete cat
+        function deleteCat(catName) {
+            if (!confirm(`Are you sure you want to delete ${catName} and all their photos?`)) {
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            delete data[catName];
+            localStorage.setItem('catsData', JSON.stringify(data));
+
+            if (currentCat === catName) {
+                const remainingCats = Object.keys(data);
+                currentCat = null;
+                currentCatDisplay.textContent = 'Select a Cat';
+                fileInput.disabled = true;
+                fileInputLabel.style.opacity = '0.5';
+            }
+
+            renderCatList();
+            loadGallery();
+        }
+
+        // Render cat list
+        function renderCatList() {
+            const cats = getAllCats();
+            catList.innerHTML = '';
+
+            if (cats.length === 0) {
+                catList.innerHTML = '<p class="text-gray-400">No cats yet. Add one above!</p>';
+                return;
+            }
+
+            cats.forEach(cat => {
+                const isActive = cat === currentCat;
+                const button = document.createElement('button');
+                button.className = `px-4 py-2 rounded-lg font-semibold transition-all ${
+                    isActive 
+                        ? 'bg-gray-800 text-white shadow-md' 
+                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`;
+                
+                const photoCount = JSON.parse(localStorage.getItem('catsData') || '{}')[cat].length;
+                button.textContent = `${cat} (${photoCount})`;
+                
+                button.onclick = () => setCurrentCat(cat);
+                catList.appendChild(button);
+
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'px-3 py-2 rounded-lg font-semibold bg-red-500/20 text-red-600 hover:bg-red-500/30 transition-colors';
+                deleteBtn.textContent = '✕';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteCat(cat);
+                };
+                catList.appendChild(deleteBtn);
+            });
+        }
+
+        // Load gallery for current cat
+        function loadGallery() {
+            gallery.innerHTML = '';
+
+            if (!currentCat) {
+                emptyStateText.textContent = 'Select or create a cat to get started!';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            const images = data[currentCat] || [];
+
+            if (images.length === 0) {
+                emptyStateText.textContent = `No photos for ${currentCat} yet. Upload some to get started!`;
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            images.forEach((imageData, index) => {
+                const item = document.createElement('div');
+                item.className = 'relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl cursor-pointer group transition-transform hover:-translate-y-2 bg-gray-100';
+
+                const img = document.createElement('img');
+                img.src = imageData;
+                img.alt = `${currentCat}'s photo`;
+                img.className = 'w-full h-56 object-cover display-block';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'absolute top-3 right-3 bg-red-500/90 hover:bg-red-600 text-white w-10 h-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-lg font-bold';
+                deleteBtn.innerHTML = '✕';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteImage(index);
+                };
+
+                item.appendChild(img);
+                item.appendChild(deleteBtn);
+
+                item.onclick = () => {
+                    modalImage.src = imageData;
+                    modal.classList.remove('hidden');
+                };
+
+                gallery.appendChild(item);
+            });
+        }
+
+        // Add new images
+        fileInput.addEventListener('change', (e) => {
+            if (!currentCat) {
+                alert('Please select a cat first!');
+                return;
+            }
+
+            const files = Array.from(e.target.files);
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    data[currentCat].push(event.target.result);
+                    localStorage.setItem('catsData', JSON.stringify(data));
+                    loadGallery();
+                    renderCatList();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            fileInput.value = '';
+        });
+
+        // Delete image
+        function deleteImage(index) {
+            if (!confirm('Are you sure you want to delete this photo?')) {
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            data[currentCat].splice(index, 1);
+            localStorage.setItem('catsData', JSON.stringify(data));
+            loadGallery();
+            renderCatList();
+        }
+
+        // Modal controls
+        modalClose.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        };
+
+        // Add cat button
+        addCatBtn.onclick = addCat;
+        newCatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addCat();
+        });
+
+        // Initialize
+        initializeStorage();
+        const savedCat = localStorage.getItem('currentCat');
+        if (savedCat && getAllCats().includes(savedCat)) {
+            setCurrentCat(savedCat);
+        } else {
+            renderCatList();
+            fileInput.disabled = true;
+            fileInputLabel.style.opacity = '0.5';
+        }
+    </script>
+</body>
+</html>
