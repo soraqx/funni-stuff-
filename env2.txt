@@ -1,0 +1,10 @@
+# NETLIFY_DATABASE_URL_UNPOOLED
+
+| Deploy context                  | Value                                                                                                                                         |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production                      | postgresql://neondb_owner:npg_in0DNgR6wVFB@ep-cold-cherry-aj60upyb.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require |
+| Deploy Preview                  | postgresql://neondb_owner:npg_in0DNgR6wVFB@ep-cold-cherry-aj60upyb.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require |
+| Branch deploy                   | postgresql://neondb_owner:npg_in0DNgR6wVFB@ep-cold-cherry-aj60upyb.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require |
+| Local development (Netlify CLI) | postgresql://neondb_owner:npg_in0DNgR6wVFB@ep-cold-cherry-aj60upyb.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require |
+
+
