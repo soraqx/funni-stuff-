@@ -25,10 +25,18 @@ exports.handler = async (event, context) => {
             [catId]
         );
 
+        // Normalize image_data: BYTEA columns return a Buffer; convert back to the original data URL string
+        const rows = result.rows.map(row => ({
+            id: row.id,
+            image_data: Buffer.isBuffer(row.image_data)
+                ? row.image_data.toString('utf8')
+                : String(row.image_data),
+        }));
+
         return {
             statusCode: 200,
             headers: corsHeaders,
-            body: JSON.stringify(result.rows),
+            body: JSON.stringify(rows),
         };
     } catch (error) {
         console.error('Error fetching images:', error.message);
