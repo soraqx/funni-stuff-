@@ -21,6 +21,21 @@ exports.handler = async (event, context) => {
       );
     `);
 
+    // Migrate image_data column from BYTEA to TEXT if needed
+    await query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'images'
+            AND column_name = 'image_data'
+            AND data_type = 'bytea'
+        ) THEN
+          ALTER TABLE images ALTER COLUMN image_data TYPE TEXT USING encode(image_data, 'escape');
+        END IF;
+      END $$;
+    `);
+
     // Create index for faster queries
     await query(`
       CREATE INDEX IF NOT EXISTS idx_images_cat_id ON images(cat_id);
