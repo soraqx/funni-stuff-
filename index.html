@@ -180,26 +180,32 @@
         const modalClose = document.querySelector('.modal-close');
 
         let currentCat = null;
+        let cats = [];
+        let currentImages = [];
 
-        // Initialize data structure
-        function initializeStorage() {
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
-            if (Object.keys(data).length === 0) {
-                localStorage.setItem('catsData', JSON.stringify({}));
+        // API base path
+        const API_BASE = '/.netlify/functions';
+
+        // Get all cats from database
+        async function loadCats() {
+            try {
+                const response = await fetch(`${API_BASE}/get-cats`);
+                if (!response.ok) throw new Error('Failed to load cats');
+                cats = await response.json();
+                renderCatList();
+                return cats;
+            } catch (error) {
+                console.error('Error loading cats:', error);
+                alert('Failed to load cats');
+                return [];
             }
-            return data;
-        }
-
-        // Get all cats
-        function getAllCats() {
-            return Object.keys(JSON.parse(localStorage.getItem('catsData') || '{}'));
         }
 
         // Set current cat
-        function setCurrentCat(catName) {
-            currentCat = catName;
-            localStorage.setItem('currentCat', catName);
-            currentCatDisplay.textContent = catName;
+        function setCurrentCat(cat) {
+            currentCat = cat;
+            localStorage.setItem('currentCat', JSON.stringify(cat));
+            currentCatDisplay.textContent = cat.name;
             fileInput.disabled = false;
             fileInputLabel.style.pointerEvents = 'auto';
             fileInputLabel.style.opacity = '1';
@@ -208,7 +214,7 @@
         }
 
         // Add new cat
-        function addCat() {
+        async function addCat() {
             const catName = newCatInput.value.trim();
 
             if (!catName) {
@@ -216,84 +222,108 @@
                 return;
             }
 
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
+            try {
+                const response = await fetch(`${API_BASE}/add-cat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: catName }),
+                });
 
-            if (data[catName]) {
-                alert('A cat with this name already exists!');
-                return;
-            }
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to add cat');
+                    return;
+                }
 
-            data[catName] = [];
-            localStorage.setItem('catsData', JSON.stringify(data));
-            newCatInput.value = '';
+                const newCat = await response.json();
+                newCatInput.value = '';
+                await loadCats();
 
-            if (!currentCat) {
-                setCurrentCat(catName);
-            } else {
-                renderCatList();
+                if (!currentCat) {
+                    setCurrentCat(newCat);
+                }
+            } catch (error) {
+                console.error('Error adding cat:', error);
+                alert('Failed to add cat');
             }
         }
 
         // Delete cat
-        function deleteCat(catName) {
+        async function deleteCat(catId, catName) {
             if (!confirm(`Are you sure you want to delete ${catName} and all their photos?`)) {
                 return;
             }
 
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
-            delete data[catName];
-            localStorage.setItem('catsData', JSON.stringify(data));
+            try {
+                const response = await fetch(`${API_BASE}/delete-cat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ catId }),
+                });
 
-            if (currentCat === catName) {
-                const remainingCats = Object.keys(data);
-                currentCat = null;
-                currentCatDisplay.textContent = 'Select a Cat';
-                fileInput.disabled = true;
-                fileInputLabel.style.opacity = '0.5';
+                if (!response.ok) throw new Error('Failed to delete cat');
+
+                if (currentCat && currentCat.id === catId) {
+                    currentCat = null;
+                    currentCatDisplay.textContent = 'Select a Cat';
+                    fileInput.disabled = true;
+                    fileInputLabel.style.opacity = '0.5';
+                }
+
+                await loadCats();
+                loadGallery();
+            } catch (error) {
+                console.error('Error deleting cat:', error);
+                alert('Failed to delete cat');
             }
-
-            renderCatList();
-            loadGallery();
         }
 
         // Render cat list
         function renderCatList() {
-            const cats = getAllCats();
             catList.innerHTML = '';
 
             if (cats.length === 0) {
-                catList.innerHTML = '<p class="text-rose-300">No cats yet. Add one above!</p>';
+                const emptyMsg = document.createElement('p');
+                emptyMsg.textContent = 'No cats yet. Add one above!';
+                emptyMsg.style.color = 'var(--text-secondary)';
+                catList.appendChild(emptyMsg);
                 return;
             }
 
             cats.forEach(cat => {
-                const isActive = cat === currentCat;
+                const isActive = currentCat && cat.id === currentCat.id;
                 const button = document.createElement('button');
-                button.className = `px-4 py-2 rounded-lg font-semibold transition-all ${isActive
-                    ? 'bg-rose-600 text-white shadow-md'
-                    : 'bg-rose-100 text-rose-900 hover:bg-rose-200'
-                    }`;
+                button.className = 'px-4 py-2 rounded-lg font-semibold transition-all';
 
-                const photoCount = JSON.parse(localStorage.getItem('catsData') || '{}')[cat].length;
-                button.textContent = `${cat} (${photoCount})`;
+                if (isActive) {
+                    button.style.backgroundColor = 'var(--button-bg)';
+                    button.style.color = 'white';
+                    button.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                } else {
+                    button.style.backgroundColor = 'var(--button-inactive-bg)';
+                    button.style.color = 'var(--button-inactive-text)';
+                }
 
+                button.textContent = `${cat.name}`;
                 button.onclick = () => setCurrentCat(cat);
                 catList.appendChild(button);
 
                 // Delete button
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'px-3 py-2 rounded-lg font-semibold bg-red-200 text-red-700 hover:bg-red-300 transition-colors';
+                deleteBtn.className = 'px-3 py-2 rounded-lg font-semibold transition-colors';
+                deleteBtn.style.backgroundColor = 'var(--accent)';
+                deleteBtn.style.color = 'white';
                 deleteBtn.textContent = '✕';
                 deleteBtn.onclick = (e) => {
                     e.stopPropagation();
-                    deleteCat(cat);
+                    deleteCat(cat.id, cat.name);
                 };
                 catList.appendChild(deleteBtn);
             });
         }
 
         // Load gallery for current cat
-        function loadGallery() {
+        async function loadGallery() {
             gallery.innerHTML = '';
 
             if (!currentCat) {
@@ -302,83 +332,110 @@
                 return;
             }
 
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
-            const images = data[currentCat] || [];
+            try {
+                const response = await fetch(`${API_BASE}/get-images?catId=${currentCat.id}`);
+                if (!response.ok) throw new Error('Failed to load images');
 
-            if (images.length === 0) {
-                emptyStateText.textContent = `No photos for ${currentCat} yet. Upload some to get started!`;
+                currentImages = await response.json();
+
+                if (currentImages.length === 0) {
+                    emptyStateText.textContent = `No photos for ${currentCat.name} yet. Upload some to get started!`;
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                emptyState.classList.add('hidden');
+
+                currentImages.forEach((image) => {
+                    const item = document.createElement('div');
+                    item.className = 'relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl cursor-pointer group transition-transform hover:-translate-y-2';
+                    item.style.backgroundColor = 'var(--gallery-bg)';
+
+                    const img = document.createElement('img');
+                    img.src = image.image_data;
+                    img.alt = `${currentCat.name}'s photo`;
+                    img.className = 'w-full h-56 object-cover display-block';
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'absolute top-3 right-3 text-white w-10 h-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-lg font-bold';
+                    deleteBtn.style.backgroundColor = 'var(--accent)';
+                    deleteBtn.innerHTML = '✕';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteImage(image.id);
+                    };
+
+                    item.appendChild(img);
+                    item.appendChild(deleteBtn);
+
+                    item.onclick = () => {
+                        modalImage.src = image.image_data;
+                        modal.classList.remove('hidden');
+                    };
+
+                    gallery.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                emptyStateText.textContent = 'Failed to load photos';
                 emptyState.classList.remove('hidden');
-                return;
             }
-
-            emptyState.classList.add('hidden');
-
-            images.forEach((imageData, index) => {
-                const item = document.createElement('div');
-                item.className = 'relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl cursor-pointer group transition-transform hover:-translate-y-2';
-                item.style.backgroundColor = 'var(--gallery-bg)';
-
-                const img = document.createElement('img');
-                img.src = imageData;
-                img.alt = `${currentCat}'s photo`;
-                img.className = 'w-full h-56 object-cover display-block';
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'absolute top-3 right-3 text-white w-10 h-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-lg font-bold';
-                deleteBtn.style.backgroundColor = 'var(--accent)';
-                deleteBtn.innerHTML = '✕';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteImage(index);
-                };
-
-                item.appendChild(img);
-                item.appendChild(deleteBtn);
-
-                item.onclick = () => {
-                    modalImage.src = imageData;
-                    modal.classList.remove('hidden');
-                };
-
-                gallery.appendChild(item);
-            });
         }
 
-        // Add new images
-        fileInput.addEventListener('change', (e) => {
+        // Upload images
+        fileInput.addEventListener('change', async (e) => {
             if (!currentCat) {
                 alert('Please select a cat first!');
                 return;
             }
 
             const files = Array.from(e.target.files);
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
 
-            files.forEach(file => {
+            for (const file of files) {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    data[currentCat].push(event.target.result);
-                    localStorage.setItem('catsData', JSON.stringify(data));
-                    loadGallery();
-                    renderCatList();
+                reader.onload = async (event) => {
+                    try {
+                        const response = await fetch(`${API_BASE}/upload-image`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                catId: currentCat.id,
+                                imageData: event.target.result,
+                            }),
+                        });
+
+                        if (!response.ok) throw new Error('Failed to upload image');
+                        await loadGallery();
+                    } catch (error) {
+                        console.error('Error uploading image:', error);
+                        alert('Failed to upload image');
+                    }
                 };
                 reader.readAsDataURL(file);
-            });
+            }
 
             fileInput.value = '';
         });
 
         // Delete image
-        function deleteImage(index) {
+        async function deleteImage(imageId) {
             if (!confirm('Are you sure you want to delete this photo?')) {
                 return;
             }
 
-            const data = JSON.parse(localStorage.getItem('catsData') || '{}');
-            data[currentCat].splice(index, 1);
-            localStorage.setItem('catsData', JSON.stringify(data));
-            loadGallery();
-            renderCatList();
+            try {
+                const response = await fetch(`${API_BASE}/delete-image`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageId }),
+                });
+
+                if (!response.ok) throw new Error('Failed to delete image');
+                await loadGallery();
+            } catch (error) {
+                console.error('Error deleting image:', error);
+                alert('Failed to delete image');
+            }
         }
 
         // Modal controls
@@ -429,18 +486,37 @@
         document.getElementById('paletteZinc').onclick = () => setPalette('zinc');
 
         // Initialize
-        initializeStorage();
-        const savedPalette = localStorage.getItem('selectedPalette') || 'pink';
-        setPalette(savedPalette);
+        async function init() {
+            const savedPalette = localStorage.getItem('selectedPalette') || 'pink';
+            setPalette(savedPalette);
 
-        const savedCat = localStorage.getItem('currentCat');
-        if (savedCat && getAllCats().includes(savedCat)) {
-            setCurrentCat(savedCat);
-        } else {
-            renderCatList();
-            fileInput.disabled = true;
-            fileInputLabel.style.opacity = '0.5';
+            await loadCats();
+
+            const savedCat = localStorage.getItem('currentCat');
+            if (savedCat) {
+                try {
+                    const parsedCat = JSON.parse(savedCat);
+                    const catExists = cats.find(c => c.id === parsedCat.id);
+                    if (catExists) {
+                        setCurrentCat(catExists);
+                    } else {
+                        renderCatList();
+                        fileInput.disabled = true;
+                        fileInputLabel.style.opacity = '0.5';
+                    }
+                } catch (e) {
+                    renderCatList();
+                    fileInput.disabled = true;
+                    fileInputLabel.style.opacity = '0.5';
+                }
+            } else {
+                renderCatList();
+                fileInput.disabled = true;
+                fileInputLabel.style.opacity = '0.5';
+            }
         }
+
+        init();
     </script>
 </body>
 

@@ -1,0 +1,16 @@
+{
+    "name": "posa-gallery",
+    "version": "1.0.0",
+    "description": "Cat photo gallery with Netlify backend",
+    "main": "index.html",
+    "scripts": {
+        "build": "echo 'No build needed for static files'",
+        "dev": "netlify dev"
+    },
+    "dependencies": {
+        "pg": "^8.11.3"
+    },
+    "devDependencies": {
+        "netlify-cli": "^17.0.0"
+    }
+}
