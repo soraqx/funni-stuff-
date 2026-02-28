@@ -347,6 +347,7 @@
                 emptyState.classList.add('hidden');
 
                 currentImages.forEach((image) => {
+                    console.log('image_data type:', typeof image.image_data, '| prefix:', String(image.image_data).substring(0, 80));
                     const item = document.createElement('div');
                     item.className = 'relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl cursor-pointer group transition-transform hover:-translate-y-2';
                     item.style.backgroundColor = 'var(--gallery-bg)';
