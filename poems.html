@@ -7,43 +7,97 @@
     <title>poems</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            --bg-light: #fff7ed;
+            --bg-dark: #fce7f3;
+            --primary: #be185d;
+            --primary-light: #db2777;
+            --primary-dark: #9d174d;
+            --text-primary: #831843;
+            --text-secondary: #be123c;
+            --accent: #f43f5e;
+            --input-border: #fbcfe8;
+        }
+
+        body.palette-gray {
+            --bg-light: #f3f4f6;
+            --bg-dark: #e5e7eb;
+            --primary: #374151;
+            --primary-light: #4b5563;
+            --primary-dark: #1f2937;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --accent: #6b7280;
+            --input-border: #d1d5db;
+        }
+
+        body.palette-slate {
+            --bg-light: #f1f5f9;
+            --bg-dark: #e2e8f0;
+            --primary: #334155;
+            --primary-light: #475569;
+            --primary-dark: #1e293b;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --accent: #64748b;
+            --input-border: #cbd5e1;
+        }
+
+        body.palette-zinc {
+            --bg-light: #fafaf9;
+            --bg-dark: #f4f4f3;
+            --primary: #27272a;
+            --primary-light: #3f3f46;
+            --primary-dark: #18181b;
+            --text-primary: #18181b;
+            --text-secondary: #3f3f46;
+            --accent: #52525b;
+            --input-border: #e4e4e7;
+        }
+
         body {
-            background: linear-gradient(135deg, #fff7ed 0%, #fce7f3 100%);
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-dark) 100%);
             min-height: 100vh;
             font-family: Georgia, 'Times New Roman', serif;
         }
 
         .poem-card {
             background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(251, 207, 232, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.07);
             backdrop-filter: blur(4px);
         }
 
         .poem-title {
-            color: #9d174d;
+            color: var(--primary-dark);
             font-style: italic;
         }
 
         .poem-body {
-            color: #831843;
+            color: var(--text-primary);
             line-height: 2;
             white-space: pre-line;
         }
 
-        .poem-divider {
-            border-color: rgba(244, 63, 94, 0.2);
+        .page-title {
+            color: var(--primary);
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            opacity: 0.6;
         }
 
         a.back-link {
-            color: rgba(190, 24, 93, 0.35);
+            color: var(--primary);
+            opacity: 0.3;
             font-size: 0.65rem;
             text-decoration: none;
             letter-spacing: 0.05em;
-            transition: color 0.3s;
+            transition: opacity 0.3s;
         }
 
         a.back-link:hover {
-            color: rgba(190, 24, 93, 0.6);
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -52,8 +106,8 @@
     <div class="container mx-auto px-4 py-12 max-w-2xl">
 
         <header class="text-center mb-14">
-            <h1 class="text-4xl font-light mb-2" style="color: #be185d; letter-spacing: 0.08em;">poems</h1>
-            <p class="text-sm" style="color: rgba(190,24,93,0.5);">a quiet collection</p>
+            <h1 class="text-4xl font-light mb-2 page-title" style="letter-spacing: 0.08em;">poems</h1>
+            <p class="text-sm page-subtitle">a quiet collection</p>
         </header>
 
         <div class="space-y-14">
@@ -129,6 +183,14 @@
         </footer>
 
     </div>
+
+    <script>
+        // Apply the same palette saved by the cat gallery page
+        const savedPalette = localStorage.getItem('selectedPalette') || 'pink';
+        if (savedPalette !== 'pink') {
+            document.body.classList.add('palette-' + savedPalette);
+        }
+    </script>
 </body>
 
 </html>
