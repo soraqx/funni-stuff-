@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>poems</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #fff7ed 0%, #fce7f3 100%);
+            min-height: 100vh;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        .poem-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(251, 207, 232, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .poem-title {
+            color: #9d174d;
+            font-style: italic;
+        }
+
+        .poem-body {
+            color: #831843;
+            line-height: 2;
+            white-space: pre-line;
+        }
+
+        .poem-divider {
+            border-color: rgba(244, 63, 94, 0.2);
+        }
+
+        a.back-link {
+            color: rgba(190, 24, 93, 0.35);
+            font-size: 0.65rem;
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            transition: color 0.3s;
+        }
+
+        a.back-link:hover {
+            color: rgba(190, 24, 93, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mx-auto px-4 py-12 max-w-2xl">
+
+        <header class="text-center mb-14">
+            <h1 class="text-4xl font-light mb-2" style="color: #be185d; letter-spacing: 0.08em;">poems</h1>
+            <p class="text-sm" style="color: rgba(190,24,93,0.5);">a quiet collection</p>
+        </header>
+
+        <div class="space-y-14">
+
+            <article class="poem-card rounded-2xl p-8 shadow-sm">
+                <h2 class="poem-title text-lg mb-5">morning cat</h2>
+                <p class="poem-body text-sm">
+                    she stretches across the windowsill
+                    as if the sunlight owes her something—
+                    and maybe it does.
+
+                    she has never learned
+                    to ask for less
+                    than everything.
+                </p>
+            </article>
+
+            <article class="poem-card rounded-2xl p-8 shadow-sm">
+                <h2 class="poem-title text-lg mb-5">small hours</h2>
+                <p class="poem-body text-sm">
+                    at 3am the house breathes differently,
+                    slower, softer,
+                    like it finally has room
+                    to exhale.
+
+                    i sit with a cup of something warm
+                    and watch the dark
+                    and for once
+                    ask nothing of it.
+                </p>
+            </article>
+
+            <article class="poem-card rounded-2xl p-8 shadow-sm">
+                <h2 class="poem-title text-lg mb-5">after rain</h2>
+                <p class="poem-body text-sm">
+                    the petrichor is just a word
+                    for something we already know—
+                    that the earth, too,
+                    has been waiting.
+                </p>
+            </article>
+
+            <article class="poem-card rounded-2xl p-8 shadow-sm">
+                <h2 class="poem-title text-lg mb-5">routine</h2>
+                <p class="poem-body text-sm">
+                    she comes to the bowl at the same time
+                    every morning,
+                    certain only of this:
+                    that it will be full,
+                    that i will be there,
+                    that some things do not change.
+
+                    i try to be
+                    as dependable as her hunger.
+                </p>
+            </article>
+
+            <article class="poem-card rounded-2xl p-8 shadow-sm">
+                <h2 class="poem-title text-lg mb-5">distance</h2>
+                <p class="poem-body text-sm">
+                    the stars are old light,
+                    arriving late,
+                    patient as grief—
+                    still bright enough
+                    to navigate by.
+                </p>
+            </article>
+
+        </div>
+
+        <footer class="text-center mt-16">
+            <a href="index.html" class="back-link">← back</a>
+        </footer>
+
+    </div>
+</body>
+
+</html>

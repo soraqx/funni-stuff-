@@ -542,6 +542,22 @@
 
         init();
     </script>
+
+    <!-- subtle secret link, no text, blends into background -->
+    <a href="poems.html" style="
+        position: fixed;
+        bottom: 18px;
+        right: 22px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(190,24,93,0.13);
+        display: block;
+        cursor: default;
+        transition: background 0.3s;
+        z-index: 10;
+    " onmouseover="this.style.background='rgba(190,24,93,0.22)'"
+        onmouseout="this.style.background='rgba(190,24,93,0.13)'" title=""></a>
 </body>
 
 </html>
