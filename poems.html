@@ -5,17 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>poems</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         :root {
             --bg-light: #fff7ed;
             --bg-dark: #fce7f3;
             --primary: #be185d;
-            --primary-light: #db2777;
             --primary-dark: #9d174d;
             --text-primary: #831843;
             --text-secondary: #be123c;
-            --accent: #f43f5e;
             --input-border: #fbcfe8;
         }
 
@@ -23,11 +26,9 @@
             --bg-light: #f3f4f6;
             --bg-dark: #e5e7eb;
             --primary: #374151;
-            --primary-light: #4b5563;
             --primary-dark: #1f2937;
             --text-primary: #1f2937;
             --text-secondary: #4b5563;
-            --accent: #6b7280;
             --input-border: #d1d5db;
         }
 
@@ -35,11 +36,9 @@
             --bg-light: #f1f5f9;
             --bg-dark: #e2e8f0;
             --primary: #334155;
-            --primary-light: #475569;
             --primary-dark: #1e293b;
             --text-primary: #1e293b;
             --text-secondary: #475569;
-            --accent: #64748b;
             --input-border: #cbd5e1;
         }
 
@@ -47,149 +46,452 @@
             --bg-light: #fafaf9;
             --bg-dark: #f4f4f3;
             --primary: #27272a;
-            --primary-light: #3f3f46;
             --primary-dark: #18181b;
             --text-primary: #18181b;
             --text-secondary: #3f3f46;
-            --accent: #52525b;
             --input-border: #e4e4e7;
         }
 
         body {
             background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-dark) 100%);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             font-family: Georgia, 'Times New Roman', serif;
+            overflow: hidden;
         }
 
-        .poem-card {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.07);
-            backdrop-filter: blur(4px);
+        #game-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        .poem-title {
-            color: var(--primary-dark);
+        #game-title {
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            color: var(--primary);
+            opacity: 0.5;
             font-style: italic;
         }
 
-        .poem-body {
+        canvas {
+            display: block;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+            image-rendering: pixelated;
+        }
+
+        /* Dialogue box */
+        #dialogue {
+            position: absolute;
+            bottom: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1.5px solid var(--input-border);
+            border-radius: 14px;
+            padding: 18px 22px 14px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            backdrop-filter: blur(6px);
+        }
+
+        #dialogue.visible {
+            display: flex;
+        }
+
+        #dialogue-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            color: var(--primary);
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        #dialogue-text {
+            font-size: 0.92rem;
+            line-height: 1.85;
             color: var(--text-primary);
-            line-height: 2;
+            min-height: 2.5em;
             white-space: pre-line;
         }
 
-        .page-title {
-            color: var(--primary);
-        }
-
-        .page-subtitle {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-
-        a.back-link {
-            color: var(--primary);
-            opacity: 0.3;
+        #dialogue-hint {
             font-size: 0.65rem;
-            text-decoration: none;
+            color: var(--text-secondary);
+            opacity: 0.45;
+            text-align: right;
             letter-spacing: 0.05em;
-            transition: opacity 0.3s;
         }
 
-        a.back-link:hover {
-            opacity: 0.6;
+        /* Interaction prompt */
+        #interact-prompt {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 3px 9px;
+            font-size: 0.62rem;
+            color: var(--primary);
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            display: none;
+            white-space: nowrap;
+            backdrop-filter: blur(4px);
+        }
+
+        #interact-prompt.visible {
+            display: block;
+        }
+
+        /* Back link */
+        #back-link {
+            font-size: 0.62rem;
+            color: var(--primary);
+            opacity: 0.28;
+            text-decoration: none;
+            letter-spacing: 0.06em;
+            transition: opacity 0.3s;
+            font-family: Georgia, serif;
+        }
+
+        #back-link:hover {
+            opacity: 0.55;
+        }
+
+        /* Controls hint */
+        #controls-hint {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            opacity: 0.35;
+            letter-spacing: 0.06em;
         }
     </style>
 </head>
 
 <body>
-    <div class="container mx-auto px-4 py-12 max-w-2xl">
-
-        <header class="text-center mb-14">
-            <h1 class="text-4xl font-light mb-2 page-title" style="letter-spacing: 0.08em;">poems</h1>
-            <p class="text-sm page-subtitle">a quiet collection</p>
-        </header>
-
-        <div class="space-y-14">
-
-            <article class="poem-card rounded-2xl p-8 shadow-sm">
-                <h2 class="poem-title text-lg mb-5">morning cat</h2>
-                <p class="poem-body text-sm">
-                    she stretches across the windowsill
-                    as if the sunlight owes her something—
-                    and maybe it does.
-
-                    she has never learned
-                    to ask for less
-                    than everything.
-                </p>
-            </article>
-
-            <article class="poem-card rounded-2xl p-8 shadow-sm">
-                <h2 class="poem-title text-lg mb-5">small hours</h2>
-                <p class="poem-body text-sm">
-                    at 3am the house breathes differently,
-                    slower, softer,
-                    like it finally has room
-                    to exhale.
-
-                    i sit with a cup of something warm
-                    and watch the dark
-                    and for once
-                    ask nothing of it.
-                </p>
-            </article>
-
-            <article class="poem-card rounded-2xl p-8 shadow-sm">
-                <h2 class="poem-title text-lg mb-5">after rain</h2>
-                <p class="poem-body text-sm">
-                    the petrichor is just a word
-                    for something we already know—
-                    that the earth, too,
-                    has been waiting.
-                </p>
-            </article>
-
-            <article class="poem-card rounded-2xl p-8 shadow-sm">
-                <h2 class="poem-title text-lg mb-5">routine</h2>
-                <p class="poem-body text-sm">
-                    she comes to the bowl at the same time
-                    every morning,
-                    certain only of this:
-                    that it will be full,
-                    that i will be there,
-                    that some things do not change.
-
-                    i try to be
-                    as dependable as her hunger.
-                </p>
-            </article>
-
-            <article class="poem-card rounded-2xl p-8 shadow-sm">
-                <h2 class="poem-title text-lg mb-5">distance</h2>
-                <p class="poem-body text-sm">
-                    the stars are old light,
-                    arriving late,
-                    patient as grief—
-                    still bright enough
-                    to navigate by.
-                </p>
-            </article>
-
+    <div id="game-wrapper">
+        <span id="game-title">a small world of poems</span>
+        <div style="position:relative;">
+            <canvas id="canvas" width="480" height="360"></canvas>
+            <div id="interact-prompt">press E</div>
+            <div id="dialogue">
+                <div id="dialogue-title"></div>
+                <div id="dialogue-text"></div>
+                <div id="dialogue-hint">click or press E to continue</div>
+            </div>
         </div>
-
-        <footer class="text-center mt-16">
-            <a href="index.html" class="back-link">← back</a>
-        </footer>
-
+        <div style="display:flex; gap:24px; align-items:center;">
+            <span id="controls-hint">arrow keys / WASD to move · E to interact</span>
+            <a href="index.html" id="back-link">← back</a>
+        </div>
     </div>
 
     <script>
-        // Apply the same palette saved by the cat gallery page
+        // ── Palette ──────────────────────────────────────────────────────────────
         const savedPalette = localStorage.getItem('selectedPalette') || 'pink';
-        if (savedPalette !== 'pink') {
-            document.body.classList.add('palette-' + savedPalette);
+        if (savedPalette !== 'pink') document.body.classList.add('palette-' + savedPalette);
+
+        // Resolve CSS vars for canvas drawing
+        function cssVar(name) {
+            return getComputedStyle(document.body).getPropertyValue(name).trim();
         }
+
+        // ── Poems ─────────────────────────────────────────────────────────────────
+        const POEMS = [
+            {
+                title: 'morning cat',
+                lines: [
+                    'she stretches across the windowsill\nas if the sunlight owes her something—\nand maybe it does.',
+                    'she has never learned\nto ask for less\nthan everything.'
+                ],
+                emoji: '🌅',
+                label: 'windowsill'
+            },
+            {
+                title: 'small hours',
+                lines: [
+                    'at 3am the house breathes differently,\nslower, softer,\nlike it finally has room\nto exhale.',
+                    'i sit with a cup of something warm\nand watch the dark\nand for once\nask nothing of it.'
+                ],
+                emoji: '🕯️',
+                label: 'candle'
+            },
+            {
+                title: 'after rain',
+                lines: [
+                    'the petrichor is just a word\nfor something we already know—\nthat the earth, too,\nhas been waiting.'
+                ],
+                emoji: '🌧️',
+                label: 'puddle'
+            },
+            {
+                title: 'routine',
+                lines: [
+                    'she comes to the bowl at the same time\nevery morning,\ncertain only of this:\nthat it will be full,\nthat i will be there,\nthat some things do not change.',
+                    'i try to be\nas dependable as her hunger.'
+                ],
+                emoji: '🐱',
+                label: 'cat bowl'
+            },
+            {
+                title: 'distance',
+                lines: [
+                    'the stars are old light,\narriving late,\npatient as grief—\nstill bright enough\nto navigate by.'
+                ],
+                emoji: '✨',
+                label: 'stars'
+            }
+        ];
+
+        // ── Canvas setup ──────────────────────────────────────────────────────────
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        const TILE = 32;
+        const COLS = W / TILE, ROWS = H / TILE; // 15 x 11.25 → use 15x11
+
+        // ── World map (0=floor, 1=wall) ───────────────────────────────────────────
+        // 15 cols × 11 rows
+        const MAP_W = 15, MAP_H = 11;
+        const map = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ];
+
+        // ── Objects (tile positions) ──────────────────────────────────────────────
+        const objects = [
+            { tx: 2, ty: 2, poemIdx: 0 }, // windowsill
+            { tx: 12, ty: 2, poemIdx: 1 }, // candle
+            { tx: 7, ty: 5, poemIdx: 2 }, // puddle
+            { tx: 2, ty: 8, poemIdx: 3 }, // cat bowl
+            { tx: 12, ty: 8, poemIdx: 4 }, // stars
+        ];
+
+        // ── Player ────────────────────────────────────────────────────────────────
+        const player = {
+            x: 7 * TILE, y: 5 * TILE, // pixel position (top-left of tile)
+            speed: 2,
+            size: TILE - 6
+        };
+
+        // ── Input ─────────────────────────────────────────────────────────────────
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+            if ((e.key === 'e' || e.key === 'E') && !dialogueOpen) {
+                tryInteract();
+            } else if ((e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') && dialogueOpen) {
+                advanceDialogue();
+            }
+        });
+        window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+        // ── Dialogue state ────────────────────────────────────────────────────────
+        let dialogueOpen = false;
+        let currentPoem = null;
+        let currentLine = 0;
+
+        const dialogueEl = document.getElementById('dialogue');
+        const dialogueTitleEl = document.getElementById('dialogue-title');
+        const dialogueTextEl = document.getElementById('dialogue-text');
+        const interactPrompt = document.getElementById('interact-prompt');
+
+        function openDialogue(poemIdx) {
+            currentPoem = POEMS[poemIdx];
+            currentLine = 0;
+            dialogueOpen = true;
+            dialogueTitleEl.textContent = currentPoem.title;
+            dialogueTextEl.textContent = currentPoem.lines[0];
+            dialogueEl.classList.add('visible');
+        }
+
+        function advanceDialogue() {
+            if (!dialogueOpen) return;
+            currentLine++;
+            if (currentLine >= currentPoem.lines.length) {
+                closeDialogue();
+            } else {
+                dialogueTextEl.textContent = currentPoem.lines[currentLine];
+            }
+        }
+
+        function closeDialogue() {
+            dialogueOpen = false;
+            dialogueEl.classList.remove('visible');
+            currentPoem = null;
+        }
+
+        dialogueEl.addEventListener('click', advanceDialogue);
+
+        function tryInteract() {
+            const nearObj = getNearObject();
+            if (nearObj !== null) {
+                openDialogue(objects[nearObj].poemIdx);
+            }
+        }
+
+        // ── Proximity ─────────────────────────────────────────────────────────────
+        const INTERACT_DIST = TILE * 1.5;
+
+        function getNearObject() {
+            const px = player.x + player.size / 2;
+            const py = player.y + player.size / 2;
+            for (let i = 0; i < objects.length; i++) {
+                const ox = objects[i].tx * TILE + TILE / 2;
+                const oy = objects[i].ty * TILE + TILE / 2;
+                const dx = px - ox, dy = py - oy;
+                if (Math.sqrt(dx * dx + dy * dy) < INTERACT_DIST) return i;
+            }
+            return null;
+        }
+
+        // ── Collision ─────────────────────────────────────────────────────────────
+        function isSolid(tx, ty) {
+            if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return true;
+            if (map[ty][tx] === 1) return true;
+            // objects are solid
+            for (const o of objects) {
+                if (o.tx === tx && o.ty === ty) return true;
+            }
+            return false;
+        }
+
+        function canMove(nx, ny) {
+            const margin = 2;
+            const s = player.size - margin * 2;
+            const corners = [
+                [nx + margin, ny + margin],
+                [nx + margin + s, ny + margin],
+                [nx + margin, ny + margin + s],
+                [nx + margin + s, ny + margin + s],
+            ];
+            for (const [cx, cy] of corners) {
+                if (isSolid(Math.floor(cx / TILE), Math.floor(cy / TILE))) return false;
+            }
+            return true;
+        }
+
+        // ── Update ────────────────────────────────────────────────────────────────
+        function update() {
+            if (dialogueOpen) return;
+
+            let dx = 0, dy = 0;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= player.speed;
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += player.speed;
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= player.speed;
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += player.speed;
+
+            if (dx !== 0 && canMove(player.x + dx, player.y)) player.x += dx;
+            if (dy !== 0 && canMove(player.x, player.y + dy)) player.y += dy;
+
+            // Interact prompt
+            const near = getNearObject();
+            if (near !== null) {
+                const ox = objects[near].tx * TILE;
+                const oy = objects[near].ty * TILE;
+                interactPrompt.style.left = (ox + TILE / 2 - 22) + 'px';
+                interactPrompt.style.top = (oy - 22) + 'px';
+                interactPrompt.classList.add('visible');
+            } else {
+                interactPrompt.classList.remove('visible');
+            }
+        }
+
+        // ── Draw ──────────────────────────────────────────────────────────────────
+        function draw() {
+            const floorColor = cssVar('--bg-light');
+            const wallColor = cssVar('--primary-dark');
+            const playerColor = cssVar('--primary');
+            const objBg = cssVar('--bg-dark');
+
+            // Floor & walls
+            for (let row = 0; row < MAP_H; row++) {
+                for (let col = 0; col < MAP_W; col++) {
+                    if (map[row][col] === 1) {
+                        ctx.fillStyle = wallColor;
+                    } else {
+                        ctx.fillStyle = floorColor;
+                    }
+                    ctx.fillRect(col * TILE, row * TILE, TILE, TILE);
+                }
+            }
+
+            // Subtle grid lines on floor
+            ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+            ctx.lineWidth = 0.5;
+            for (let row = 1; row < MAP_H - 1; row++) {
+                ctx.beginPath();
+                ctx.moveTo(TILE, row * TILE);
+                ctx.lineTo((MAP_W - 1) * TILE, row * TILE);
+                ctx.stroke();
+            }
+            for (let col = 1; col < MAP_W - 1; col++) {
+                ctx.beginPath();
+                ctx.moveTo(col * TILE, TILE);
+                ctx.lineTo(col * TILE, (MAP_H - 1) * TILE);
+                ctx.stroke();
+            }
+
+            // Objects
+            for (const o of objects) {
+                const poem = POEMS[o.poemIdx];
+                const ox = o.tx * TILE, oy = o.ty * TILE;
+                // soft circle bg
+                ctx.fillStyle = objBg;
+                ctx.beginPath();
+                ctx.arc(ox + TILE / 2, oy + TILE / 2, TILE / 2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+                // emoji
+                ctx.font = `${TILE - 10}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(poem.emoji, ox + TILE / 2, oy + TILE / 2);
+            }
+
+            // Player (soft rounded square)
+            const px = player.x + 3, py = player.y + 3;
+            const ps = player.size - 6;
+            ctx.fillStyle = playerColor;
+            ctx.beginPath();
+            ctx.roundRect(px, py, ps, ps, 6);
+            ctx.fill();
+            // face dot
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.beginPath();
+            ctx.arc(px + ps / 2, py + ps / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ── Loop ──────────────────────────────────────────────────────────────────
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
     </script>
 </body>
 
